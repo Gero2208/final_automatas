@@ -19,17 +19,17 @@ ARCHIVO_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "export-2
 # Si un campo no cumple su regex, el registro se descarta.
 REGEX = {
     "ID":               re.compile(r"^\d+$"),
-    "ID_Sesion":        re.compile(r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{8}$"),
-    "ID_Conexion":      re.compile(r"^[0-9a-f]{16}$"),
-    "Usuario":          re.compile(r"^[A-Za-z0-9._\-]+$"),
-    "IP":               re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"),
+    "ID_Sesion":        re.compile(r"^[0-9A-Fa-f]+-?[0-9A-Fa-f]+$"),
+    "ID_Conexion":      re.compile(r"^[0-9A-Fa-f]{16}$"),
+    "Usuario":          re.compile(r"^[\w.-]+$"),
+    "IP":               re.compile(r"^(\d{1,3}.){3}\d{1,3}$"),
     "Tipo_conexion":    re.compile(r"^[\w\-\.]+$"),
     "Fecha":            re.compile(r"^\d{4}-\d{2}-\d{2}$"),
     "Hora":             re.compile(r"^\d{2}:\d{2}:\d{2}$"),
     "Numerico":         re.compile(r"^\d+$"),
-    "MAC_AP":           re.compile(r"^([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}(:\w+)?$"),
+    "MAC_AP":           re.compile(r"^([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}:.+$"),
     "MAC_Cliente":      re.compile(r"^([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$"),
-    "Razon":            re.compile(r"^[\w\-]+$"),
+    "Razon":            re.compile(r"^[\w-]*$"),
 }
 
 # Orden de validación: (índice en el CSV, nombre del campo, clave en REGEX)
@@ -58,7 +58,7 @@ def validar_registro(fila):
     Retorna (True, None) si es válido o (False, 'campo con error') si no."""
     for indice, nombre, clave in CAMPOS:
         valor = fila[indice].strip()
-        if not valor or not REGEX[clave].match(valor):
+        if not REGEX[clave].match(valor):
             return False, nombre
     return True, None
 
@@ -235,6 +235,56 @@ def exportar_excel(ordenados, fecha_inicio, fecha_fin):
     print(f"\n  Archivo exportado: {nombre}")
 
 
+def exportar_excel_descartados(invalidos):
+    """Exporta los registros descartados a un archivo Excel (.xlsx)."""
+    if not OPENPYXL_DISPONIBLE:
+        print("\n  El módulo 'openpyxl' no está instalado.")
+        print("  Para instalarlo ejecute: pip install openpyxl")
+        return
+
+    nombre = "registros_descartados.xlsx"
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), nombre)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Registros Descartados"
+
+    # Estilos
+    fuente_titulo = Font(name="Arial", size=12, bold=True, color="FFFFFF")
+    fuente_encabezado = Font(name="Arial", size=10, bold=True, color="FFFFFF")
+    relleno_titulo = PatternFill(start_color="8B0000", end_color="8B0000", fill_type="solid")
+    relleno_encabezado = PatternFill(start_color="B22222", end_color="B22222", fill_type="solid")
+    centro = Alignment(horizontal="center", vertical="center")
+
+    # Título
+    ws.merge_cells("A1:C1")
+    ws["A1"].value = f"Registros descartados ({len(invalidos)} total)"
+    ws["A1"].font = fuente_titulo
+    ws["A1"].fill = relleno_titulo
+    ws["A1"].alignment = centro
+
+    # Encabezados
+    for col, texto in enumerate(["#", "Línea CSV", "Campo con error"], 1):
+        celda = ws.cell(row=3, column=col, value=texto)
+        celda.font = fuente_encabezado
+        celda.fill = relleno_encabezado
+        celda.alignment = centro
+
+    # Datos
+    for i, (linea, error) in enumerate(invalidos, 1):
+        ws.cell(row=i + 3, column=1, value=i)
+        ws.cell(row=i + 3, column=2, value=linea)
+        ws.cell(row=i + 3, column=3, value=error)
+
+    # Ancho de columnas
+    ws.column_dimensions["A"].width = 8
+    ws.column_dimensions["B"].width = 14
+    ws.column_dimensions["C"].width = 30
+
+    wb.save(ruta)
+    print(f"\n  Archivo exportado: {nombre}")
+
+
 # =============================================================================
 # PROGRAMA PRINCIPAL
 # =============================================================================
@@ -265,7 +315,8 @@ if __name__ == "__main__":
         print("  1. Consultar por rango de fechas")
         print("  2. Ver registros descartados")
         print("  3. Exportar última consulta a Excel")
-        print("  4. Salir")
+        print("  4. Exportar registros descartados a Excel")
+        print("  5. Salir")
         print(f"{'-' * 40}")
 
         opcion = input("  Opción: ").strip()
@@ -289,5 +340,8 @@ if __name__ == "__main__":
                 exportar_excel(ultima_consulta, *ultima_fecha)
 
         elif opcion == "4":
+            exportar_excel_descartados(invalidos)
+
+        elif opcion == "5":
             print("\n¡Hasta luego!")
             break
