@@ -5,7 +5,6 @@ import sys
 
 try:
     from openpyxl import Workbook
-    from openpyxl.styles import Font, Alignment, PatternFill
     OPENPYXL_DISPONIBLE = True
 except ImportError:
     OPENPYXL_DISPONIBLE = False
@@ -197,39 +196,16 @@ def exportar_excel(ordenados, fecha_inicio, fecha_fin):
     ws = wb.active
     ws.title = "Usuarios COVID-19"
 
-    # Estilos
-    fuente_titulo = Font(name="Arial", size=12, bold=True, color="FFFFFF")
-    fuente_encabezado = Font(name="Arial", size=10, bold=True, color="FFFFFF")
-    relleno_titulo = PatternFill(start_color="2E4057", end_color="2E4057", fill_type="solid")
-    relleno_encabezado = PatternFill(start_color="048A81", end_color="048A81", fill_type="solid")
-    centro = Alignment(horizontal="center", vertical="center")
-
-    # Título
-    ws.merge_cells("A1:D1")
-    ws["A1"].value = f"Usuarios conectados ({fecha_inicio} a {fecha_fin})"
-    ws["A1"].font = fuente_titulo
-    ws["A1"].fill = relleno_titulo
-    ws["A1"].alignment = centro
-
     # Encabezados
     for col, texto in enumerate(["#", "Usuario", "Tiempo Total", "Sesiones"], 1):
-        celda = ws.cell(row=3, column=col, value=texto)
-        celda.font = fuente_encabezado
-        celda.fill = relleno_encabezado
-        celda.alignment = centro
+        ws.cell(row=1, column=col, value=texto)
 
     # Datos
     for i, (usuario, datos) in enumerate(ordenados, 1):
-        ws.cell(row=i + 3, column=1, value=i)
-        ws.cell(row=i + 3, column=2, value=usuario)
-        ws.cell(row=i + 3, column=3, value=formatear_tiempo(datos["tiempo"]))
-        ws.cell(row=i + 3, column=4, value=datos["sesiones"])
-
-    # Ancho de columnas
-    ws.column_dimensions["A"].width = 6
-    ws.column_dimensions["B"].width = 28
-    ws.column_dimensions["C"].width = 22
-    ws.column_dimensions["D"].width = 12
+        ws.cell(row=i + 1, column=1, value=i)
+        ws.cell(row=i + 1, column=2, value=usuario)
+        ws.cell(row=i + 1, column=3, value=formatear_tiempo(datos["tiempo"]))
+        ws.cell(row=i + 1, column=4, value=datos["sesiones"])
 
     wb.save(ruta)
     print(f"\n  Archivo exportado: {nombre}")
@@ -249,37 +225,15 @@ def exportar_excel_descartados(invalidos):
     ws = wb.active
     ws.title = "Registros Descartados"
 
-    # Estilos
-    fuente_titulo = Font(name="Arial", size=12, bold=True, color="FFFFFF")
-    fuente_encabezado = Font(name="Arial", size=10, bold=True, color="FFFFFF")
-    relleno_titulo = PatternFill(start_color="8B0000", end_color="8B0000", fill_type="solid")
-    relleno_encabezado = PatternFill(start_color="B22222", end_color="B22222", fill_type="solid")
-    centro = Alignment(horizontal="center", vertical="center")
-
-    # Título
-    ws.merge_cells("A1:C1")
-    ws["A1"].value = f"Registros descartados ({len(invalidos)} total)"
-    ws["A1"].font = fuente_titulo
-    ws["A1"].fill = relleno_titulo
-    ws["A1"].alignment = centro
-
     # Encabezados
     for col, texto in enumerate(["#", "Línea CSV", "Campo con error"], 1):
-        celda = ws.cell(row=3, column=col, value=texto)
-        celda.font = fuente_encabezado
-        celda.fill = relleno_encabezado
-        celda.alignment = centro
+        ws.cell(row=1, column=col, value=texto)
 
     # Datos
     for i, (linea, error) in enumerate(invalidos, 1):
-        ws.cell(row=i + 3, column=1, value=i)
-        ws.cell(row=i + 3, column=2, value=linea)
-        ws.cell(row=i + 3, column=3, value=error)
-
-    # Ancho de columnas
-    ws.column_dimensions["A"].width = 8
-    ws.column_dimensions["B"].width = 14
-    ws.column_dimensions["C"].width = 30
+        ws.cell(row=i + 1, column=1, value=i)
+        ws.cell(row=i + 1, column=2, value=linea)
+        ws.cell(row=i + 1, column=3, value=error)
 
     wb.save(ruta)
     print(f"\n  Archivo exportado: {nombre}")
@@ -343,5 +297,4 @@ if __name__ == "__main__":
             exportar_excel_descartados(invalidos)
 
         elif opcion == "5":
-            print("\n¡Hasta luego!")
             break
